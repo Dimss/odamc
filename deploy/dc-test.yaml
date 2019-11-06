@@ -1,0 +1,24 @@
+kind: DeploymentConfig
+apiVersion: "v1"
+metadata:
+  labels:
+    app: "chuck-api"
+  name: "chuck-api"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        x: yss
+      labels:
+        app: "chuck-api"
+    spec:
+      containers:
+      - name: "chuck-api"
+        image: "dimssss/chuck-api:0.1"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: prod

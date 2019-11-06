@@ -1,0 +1,6 @@
+{
+  "http": {
+    "crt": "/Users/dima/.go/src/github.com/odamc/deploy/k8s-certs/server.crt",
+    "key": "/Users/dima/.go/src/github.com/odamc/deploy/k8s-certs/server-key.pem"
+  }
+}

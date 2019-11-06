@@ -1,0 +1,33 @@
+# in cluster name config odamc-webhook.odmac.svc
+# external setup name config odamc-webhook.dev
+
+
+cat <<EOF | cfssl genkey - | cfssljson -bare server
+{
+  "hosts": [
+    "odamc-webhook.dev"
+  ],
+  "CN": "odamc-webhook.dev",
+  "key": {
+    "algo": "ecdsa",
+    "size": 256
+  }
+}
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: odamc-webhook
+spec:
+  request: $(cat server.csr | base64 | tr -d '\n')
+  usages:
+  - digital signature
+  - key encipherment
+  - server auth
+EOF
+
+oc adm certificate approve odamc-webhook
+
+kubectl get csr odamc-webhook -o jsonpath='{.status.certificate}' | base64 -D > server.crt
