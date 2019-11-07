@@ -22,8 +22,8 @@ objects:
     config.json: |
       {
         "http": {
-          "crt": "/go/bin/config/server.crt",
-          "key": "/go/bin/config/server-key.pem"
+          "crt": "/go/certs/server.crt",
+          "key": "/go/certs/server-key.pem"
         }
       }
 - apiVersion: v1
@@ -56,6 +56,7 @@ objects:
         containers:
         - name: ${NAME}
           image: ${IMAGE}
+          imagePullPolicy: Always
           command: ["/bin/ash","-c","sleep 3600"]
           ports:
           - containerPort: 8080
