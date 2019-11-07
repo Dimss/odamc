@@ -2,4 +2,4 @@
 set -x
 pwd
 ls -all
-odamc server
+odamc server -c ./config

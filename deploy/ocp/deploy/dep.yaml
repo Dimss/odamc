@@ -1,0 +1,92 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+    description: Template for deploying Dyncamic Admission WebHook
+    tags: infrastructure
+  name: ${NAME}-webhook
+objects:
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: ${NAME}-certs
+  type: Opaque
+  data:
+    server.crt: ${BASE64_SERVER_CRT}
+    server.key: ${BASE64_SERVER_KEY}
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: ${NAME}-config
+  data:
+    config.json: |
+      {
+        "http": {
+          "crt": "/go/bin/config/server.crt",
+          "key": "/go/bin/config/server-key.pem"
+        }
+      }
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${NAME}
+  spec:
+    selector:
+      app: ${NAME}
+    ports:
+    - name: http
+      port: 443
+      targetPort: 8080
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${NAME}
+    labels:
+      app: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${NAME}
+    template:
+      metadata:
+        labels:
+          app: ${NAME}
+      spec:
+        containers:
+        - name: ${NAME}
+          image: ${IMAGE}
+          command: ["/bin/ash","-c","sleep 3600"]
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          - name: ${NAME}-certs
+            mountPath: /go/certs
+            readOnly: true
+          - name: ${NAME}-config
+            mountPath: /go/config
+            readOnly: true
+        volumes:
+        - name: ${NAME}-certs
+          secret:
+            secretName: ${NAME}-certs
+        - name: ${NAME}-config
+          configMap:
+            name: ${NAME}-config
+parameters:
+- description: Specify docker imge
+  name: IMAGE
+  value: "docker.io/dimssss/odamc:0.1"
+  required: true
+- description: Specify service name
+  name: NAME
+  value: "odamc"
+  required: true
+- description: Specify base64 server crt for the HTTP server
+  name: BASE64_SERVER_CRT
+  value: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURBVENDQWVtZ0F3SUJBZ0lKQU5iWUEwUWdKdEEzTUEwR0NTcUdTSWIzRFFFQkJRVUFNQmN4RlRBVEJnTlYKQkFNTURHRmtiV2x6YzJsdmJsOWpZVEFnRncweE9UQTBNekF3T1RRNU1qZGFHQTh5TVRFNU1EUXdOakE1TkRreQpOMW93TERFcU1DZ0dBMVVFQXd3aGRXRmpMbUp1YUhBdGMzbHpkR1Z0TG5OMll5NWpiSFZ6ZEdWeUxteHZZMkZzCk1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBMVJIb1dkSUlKUFNIVi85bUpraHEKNUUxay83Sm9SMnZBMHBZNk5lNWtaRWhnNlVIVUZ5U2YrL0xFOUJNeXZ1N2dIanMrR2F0T3ExcitNdHZpTjBsSgprM3ZNRiszbnVNQ2RnQ2loYUU3UDBxZU40cXZSTjlqVFJUa1Q4NDhQMEExR2hEdzJQV204Z3YwTGlqa24reXBKCkNtU0p4bWpoMi9uc0lPMm9FWUVXTGFQVmptTDdFcVJET1BpTXVlZmVmQld1c1lzOXF1MnNHTjRhaWNzSXNoTWMKRG5LSUhqdHJuTDVXZmlJN0pneHhDS0xWV1NzWG81WS9kbU5zWWpZQ2llSE1OTXlYUlZSSVBPWVBFN1ZhNEVtbwpsSlE1UndWQXR4R2haRGhhaVBvam5yWFJyL0tqNHBmVmUrN1VLbk5KYUlZU3BJSVlpY3l1Tk9qUXgvcW1sZW5SCnp3SURBUUFCb3prd056QUpCZ05WSFJNRUFqQUFNQXNHQTFVZER3UUVBd0lGNERBZEJnTlZIU1VFRmpBVUJnZ3IKQmdFRkJRY0RBZ1lJS3dZQkJRVUhBd0V3RFFZSktvWklodmNOQVFFRkJRQURnZ0VCQUI2VnBiSzJqYzRMOC8yQQpESkJmWmhaSzRJR3pnZ2VWT2JVNVFCK2x4VHlSYWRybmxkNU1ZYnNLL0dCYisxVUl1T2UrdmJ0WThoR2xqWUxnClpXdTJzZENaOVZ1d2t1LzhvVVA3SHpxS3kvdUYxaUJzSW5nRVJDdUhLOWtnd3BrZmxCbmVRWFczZGZGMzYxUEgKeHJSVGovYjFaOS9SdWtpQm12Z1lZaHpqajhjSmpEbUt2WWprcjZ0cEtkb2xaMVZ5QkozMXZBYTVrRlkyWEY3Vwo1azRtdXFnYXkxd1RJczJldllhVWNlSk9BQmN1WWozbm1IS3ZtZEllSldJWlJkeUozS0c0T0lnR1NPMnE4dERzCjNYK2lOdTgxRGE0V0R6cXBnMlZiUW5DR1E0Qi9sNXhWdEN4NzE2VmRDN0dxdENpbnZyYzl6ZDFGblp4bWRQNUcKeXcybzJ1QT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  required: true
+- description: Specify base64 service key for the HTTP server
+  name: BASE64_SERVER_KEY
+  value: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBMVJIb1dkSUlKUFNIVi85bUpraHE1RTFrLzdKb1IydkEwcFk2TmU1a1pFaGc2VUhVCkZ5U2YrL0xFOUJNeXZ1N2dIanMrR2F0T3ExcitNdHZpTjBsSmszdk1GKzNudU1DZGdDaWhhRTdQMHFlTjRxdlIKTjlqVFJUa1Q4NDhQMEExR2hEdzJQV204Z3YwTGlqa24reXBKQ21TSnhtamgyL25zSU8yb0VZRVdMYVBWam1MNwpFcVJET1BpTXVlZmVmQld1c1lzOXF1MnNHTjRhaWNzSXNoTWNEbktJSGp0cm5MNVdmaUk3Smd4eENLTFZXU3NYCm81WS9kbU5zWWpZQ2llSE1OTXlYUlZSSVBPWVBFN1ZhNEVtb2xKUTVSd1ZBdHhHaFpEaGFpUG9qbnJYUnIvS2oKNHBmVmUrN1VLbk5KYUlZU3BJSVlpY3l1Tk9qUXgvcW1sZW5SendJREFRQUJBb0lCQUh0Y2V1SkdNR0QxRXNkbwpINFJhdVVpbFpxeUVac3V6SDFqTmtiWlg1OWdINzlRZFFPYUZWZnRSZTZhMDF0U2xDUzEzcjJTOVFqY0QzOWtpClpiOE10NFNrVUc0cVY5Y243Z2lkZlpZZXkwUnpyanBtc0NOZGJqVE43emM4eFRMMy9MUGpDS1JWNjhjTEt2dEUKVEZtbkNkTHlrckpGVno4OVcvRlVwOUk2b3RTWTBFTHFpS3VhcWM1MGhIcndOcUFvaTFZRG0vNEppK3Q0SWEvQwpBYitrY2FZYllrZFB1dkxtRGZxWEdXb1N2WVBIVTh2VDk0U1AyZmtjM0NNTDdneUpSbGd5UW5sSHF5bGVLOStECldqUFJnNWFwL0w0cFh4L1JQZWNvWkROVFREQTJVWmgvRGphL0hjSzk4cTJoL0tWSFNzVm0rTm1CKytwMGRQdEQKQXMzc1NBRUNnWUVBNmdHQnRkenZLczRvQjZyd01CbzIyUjFHdE9HVmM5bnM2YnY0cjFFeDFLRlhnWmlyTW5BWApuZzFsaGdTWmR6U1FhNEgrQnNlWU55dWxGTXJiOGkxeGtnb2ZKbXVTbnBSQktjOHZxUHVrWmh0cG5KQ29GNFU0CmowVE5NNVpxQlNUblMzYnVaVkhnMEtLdzZxZmh0dXRvQ1N6RkR1K1pKeVVzcEg5NDhYQW5OazhDZ1lFQTZSaW4KakRMVEE3elFFWE1CRCtsTUthQjVGM3UvQndxZEhpOEJJbm00YVdtcjFmc05SRGl1UlZ6azhnRjM0K3pDYlNwbgo3ZUZrM1ArQzRZelRqWGhtMFBYK21hR2IyY3Y5QUEzMW9EL0lkSFBKRHNKT0VRR1hxMXBldHlSRzAwUVYzYmtYCjJJUEhjMkFaT2grYU1WY0o5VTI4RStoL3MrSlhGVHoweXpkNFRJRUNnWUE5WmwvT2hFWU5DVUxmb0M2ZHNJTXIKdk03TXIxUXpyYjdJSlpZL0NpTDFFOUNPSkt6bTh4cC9VaXlOV2ErYTQ2UHhVWTZCNE9WRHRLUUFMS3BCaFVNRAplcnhwckZnd1c5NHRSanZQTHhnWDRxRjNmMDFidm96MHFxemRHRjZCTXdtdGQydGVFbm5XeEpsL09NVzA1VmZLCjhJQlVSdkg4bjNoelFTOU95b3EvYVFLQmdRRGN1ZDcyc0s0SERRV09jSE9pQ0k1NW9KN3FNT0VjbnQxWFZyVmgKV3hmWW9ocjQvc2w2UDU0dXlwOTExeFFiZmZoQ2ZYUjYyd096RGpWMnRlOGlPTkJMc1pYTkR5N1EyQXlVdjZOSApndjZqMzN5VmdFT0NjUnFaUlhNSlE4M1pndENkN0FiN25SWUNXQTZyYm4rSmwxMHpyOCtZbm9KRzZkOENtbjFICjdoZjVnUUtCZ0NOd3pVMytuMjh4WloxL1FMVDJyU2ZVTUxCZ0g0ZXZWNU5jVU8rREpJZ0N2VkdSM1JzYXBHeEkKcGQxK3U1VVM2REZZWitOYlJ1VUZ0N0FGSENWNFhPT1lVWTFtdStBZ2lEeHVpdHlVcFhXNFpNQlNJQWJ2U2NTMwpvSW5ZMkhRSkhsbUxxK0pLSjVpN3RURDNKVFFPcHc5L2V3OHdZTnBqNFVtUFQweWFOWVdUCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+  required: true
