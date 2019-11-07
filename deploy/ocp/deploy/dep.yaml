@@ -23,7 +23,7 @@ objects:
       {
         "http": {
           "crt": "/go/certs/server.crt",
-          "key": "/go/certs/server-key.pem"
+          "key": "/go/certs/server.key"
         }
       }
 - apiVersion: v1
@@ -57,7 +57,6 @@ objects:
         - name: ${NAME}
           image: ${IMAGE}
           imagePullPolicy: Always
-          command: ["/bin/ash","-c","sleep 3600"]
           ports:
           - containerPort: 8080
           volumeMounts:
