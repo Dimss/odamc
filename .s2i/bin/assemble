@@ -1,0 +1,9 @@
+#!/bin/ash
+set -x
+mv /tmp/src /go/src/odamc
+cd /go/src/odamc
+export GO111MODULE=on
+echo "Building sources..."
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -x -o /go/bin/odamc -mod vendor cmd/server.go cmd/main.go
+rm -fr /go/src/odamc
+ls -all /go/bin
